@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Alpha Prototype</title>
+       <meta name="description" content="Alpha Prototype">
+        <script src="/socket.io/socket.io.js"></script>
+        <!-- A-Frame v. 1.5.0 -->
+        <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+        <script src="https://unpkg.com/aframe-environment-component@1.3.3/dist/aframe-environment-component.min.js"></script>
+        <!-- A-Frame Extras -->
+        <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
+        <!-- Custom Components -->
+        <script src="js/teleport-player.js"></script>
+        <script src="js/tile-checker.js"></script>
+        <script src="js/cooperative-player-physics.js"></script>
+        <!-- Socket.io -->
+        <script src="js/socket-io.js" defer></script>
+    </head>
+    <body>
+      <!-- all aframe stuff needs to be in a-scene element | ammo is our physics system-->
+      <a-scene>
+        
+        <!-- A-Frame uses an asset system to try and cache assets so we don't have to download them -->
+        <a-assets>
+            <!-- 3D MODELS -->
+            <!-- gltf is a web optimized 3D format. GLB is a binary form (single-file) and GLTF is a folder of connected files, e.g., textures and vertex data-->
+            <!-- response-type needs to be arraybuffer to properly read the .glb format (because it defaults to JSON)-->
+            <a-asset-item id="bridge_model" src="assets/Bridge.glb" response-type="arraybuffer"></a-asset-item>
+            <a-asset-item id="navmesh_model" src="assets/NavMesh.glb" response-type="arraybuffer"></a-asset-item>
+            
+            <!-- AUDIO SOURCES -->
+            <audio id="scene_music" src="assets/AmbientSong.mp3" preload="auto" crossorigin="anonymous"></audio>
+            <audio id="button_sound" src="assets/Pop.mp3" preload="auto" crossorigin="anonymous"></audio>
+        </a-assets>
+        
+        <!-- PLAYER MODELS -->
+        <a-entity
+            id="ID_Player_Models_Parent"
+            shadow="cast:false; receive:true;"
+            position="0 0 0"
+        ></a-entity>
+        
+        <!-- CAMERA -->
+        <a-entity
+            id="ID_Rig"
+            position="16 2.6 2"
+            truesight="true"  
+            movement-controls
+            custom-player-physics
+        >
+            <a-entity 
+                id="ID_Camera"
+                position="0 0.75 0"  
+                camera 
+                look-controls="pointerLockEnabled: false"
+            >
+                <!-- INTERACTION - cast a ray into the scene and check for interactions with the faces of certain objects in that scene -->
+                <!-- (rayOrigin is where the ray is coming from, raycaster is distance to check, interval is miliseconds between checks, objects is what css selector we use for which objects to check (in this case only the interactive class (i.e., '.interactive'))) -->
+                <a-entity cursor="rayOrigin:mouse;" raycaster="far:25; interval:200; objects:.interactive_far"></a-entity>
+                <a-entity cursor="rayOrigin:mouse;" raycaster="far:10; interval:200; objects:.interactive_medium"></a-entity>
+                <a-entity cursor="rayOrigin:mouse;" raycaster="far:5; interval:200; objects:.interactive_close"></a-entity>
+                
+                <!-- FLASHLIGHT -->
+                <a-entity position="0.5 -0.5 0" light="type:spot; intensity:1.4; angle:40; penumbra:0.3; castShadow:true; shadowBias:-0.0005"></a-entity>
+
+                <!-- AUDIO COMPONENT (non-diagetic in this particular case) -->
+                <a-entity id="non-diagetic-audio" sound="src:#scene_music; autoplay:true; loop:true; volume:0.5;"></a-entity>
+
+            </a-entity>
+        </a-entity>
+
+
+        <!-- SCENE GEOMETRY -->
+        <a-entity 
+            id="ID_Room"
+            shadow="cast:false; receive:true;"
+            position="0 1 0"
+        >
+            
+            <!-- GROUND -->
+            <a-entity
+                position="0 -0.25 -30"
+            >
+                <a-box
+                    id="ID_Ground"
+                    height="0.5"
+                    width="21"
+                    depth="71"
+                    color="black"
+                ></a-box>
+            </a-entity>
+
+            <!-- SIDE VIEWING AREA GROUND -->
+            <a-entity
+                position="16 -0.25 -30"
+            >
+                <a-box
+                    id="ID_Ground"
+                    height="0.5"
+                    width="5"
+                    depth="71"
+                    color="black"
+                ></a-box>
+            </a-entity>
+            
+            <!-- START ZONE -->
+            <a-entity
+                id="ID_Start_Zone"
+                position="0 -0.25 0"
+            >
+                <!-- STARTING TILE -->
+                <a-box
+                    class="Tile_Safe"
+                    position="0 0 1"
+                    height="0.6"
+                    width="20"
+                    depth="8"
+                    color="grey"
+                ></a-box>
+            </a-entity>
+            
+            <!-- ROW 1 -->
+            <a-entity
+                id="ID_Row_1"
+                position="0 -0.25 -10"
+            >
+                <!-- TILE 1 -->
+                <a-box
+                    class="Tile_Left"
+                    tile-checker
+                    position="-5 0 1"
+                    height="0.6"
+                    width="10"
+                    depth="8"
+                    color="black"
+                ></a-box>
+                <!-- TILE 2 -->
+                <a-box
+                    class="Tile_Right"
+                    position="5 0 1"
+                    height="0.6"
+                    width="10"
+                    depth="8"
+                    color="white"
+                ></a-box>
+            </a-entity>
+
+            <!-- ROW 2 -->
+            <a-entity
+                id="ID_Row_2"
+                position="0 -0.25 -20"
+            >
+                <!-- TILE 1 -->
+                <a-box
+                    class="Tile_Left"
+                    position="-5 0 1"
+                    height="0.6"
+                    width="10"
+                    depth="8"
+                    color="white"
+                ></a-box>
+                <!-- TILE 2 -->
+                <a-box
+                    class="Tile_Right"
+                    position="5 0 1"
+                    height="0.6"
+                    width="10"
+                    depth="8"
+                    color="black"
+                ></a-box>
+            </a-entity>
+            
+            <!-- ROW 3 -->
+            <a-entity
+                id="ID_Row_3"
+                position="0 -0.25 -30"
+            >
+                <!-- TILE 1 -->
+                <a-box
+                    class="Tile_Left"
+                    position="-5 0 1"
+                    height="0.6"
+                    width="10"
+                    depth="8"
+                    color="black"
+                ></a-box>
+                <!-- TILE 2 -->
+                <a-box
+                    class="Tile_Right"
+                    position="5 0 1"
+                    height="0.6"
+                    width="10"
+                    depth="8"
+                    color="white"
+                ></a-box>
+            </a-entity>
+            
+            <!-- ROW 4 -->
+            <a-entity
+                id="ID_Row_4"
+                position="0 -0.25 -40"
+            >
+                <!-- TILE 1 -->
+                <a-box
+                    class="Tile_Left"
+                    position="-5 0 1"
+                    height="0.6"
+                    width="10"
+                    depth="8"
+                    color="white"
+                ></a-box>
+                <!-- TILE 2 -->
+                <a-box
+                    class="Tile_Right"
+                    position="5 0 1"
+                    height="0.6"
+                    width="10"
+                    depth="8"
+                    color="black"
+                ></a-box>
+            </a-entity>
+
+            <!-- ROW 5 -->
+            <a-entity
+                id="ID_Row_5"
+                position="0 -0.25 -50"
+            >
+                <!-- TILE 1 -->
+                <a-box
+                    class="Tile_Left"
+                    position="-5 0 1"
+                    height="0.6"
+                    width="10"
+                    depth="8"
+                    color="black"
+                ></a-box>
+                <!-- TILE 2 -->
+                <a-box
+                    class="Tile_Right"
+                    position="5 0 1"
+                    height="0.6"
+                    width="10"
+                    depth="8"
+                    color="white"
+                ></a-box>
+            </a-entity>
+            <!-- END ZONE -->
+            <a-entity
+                id="ID_End_Zone"
+                position="0 -0.25 -60"
+            >
+                <!-- TILE 1 -->
+                <a-box
+                    class="Tile_Safe"
+                    position="0 0 1"
+                    height="0.6"
+                    width="20"
+                    depth="8"
+                    color="grey"
+                ></a-box>
+            </a-entity>
+
+            <!-- INSTRUCTIONS TEXT -->
+            <!-- plaque for text -->
+            <a-entity 
+                position="16 2.5 -1"
+                geometry="primitive:box; width:3.0; height:1.6; depth:0.2;"
+                material="color:white"
+                shadow="cast:true; receive:true;"
+            >
+                <!-- welcome text -->
+                <a-entity 
+                    position="0 0.5 0.1" 
+                    text="value:Welcome to the bridge game! To your left is 5 rows of tiles.; color:black; font:roboto; width:1.3; anchor:center; baseline:center; wrapCount:30"
+                ></a-entity>
+                <!-- explanation text -->
+                <a-entity 
+                    position="0 0 0.1" 
+                    text="value:Each row has two tiles, one is deadly (red) and the other is safe (green).; color:black; font:roboto; width:1.3; anchor:center; baseline:center; wrapCount:30"
+                ></a-entity>
+                <!-- setup text -->
+                <a-entity 
+                    position="0 -0.5 0.1" 
+                    text="value:Your job is to help the other players succesfully navigate their way to the far end.; color:black; font:roboto; width:1.3; anchor:center; baseline:center; wrapCount:30"
+                ></a-entity>
+            </a-entity>
+
+            <!-- BUTTON FOR RESETTING ROOM -->
+            <a-entity id="button_parent_entity"
+                position="0 0 -1"
+            >
+                <!-- multiple animations require unique names for each attribute (or 'component' in a-frame) -->
+                <!-- this is done by typing '[attribute/component name]__[insert name]' (i.e., animation__name) -->
+                <a-entity 
+                    id="randomization_button"
+                    class="button interactive_close" 
+                    position="0 0.6 0"
+                    geometry="primitive:cylinder; radius:0.15; height:0.2;"
+                    material="color:rgb(255, 100, 100);"
+                    animation__mouseenter="property:material.color; type:color; to:rgb(255, 0, 0); startEvents:mouseenter; dur:200;"
+                    animation__mouseleave="property:material.color; type:color; to:rgb(255, 100, 100); startEvents:mouseleave; dur:200;"
+                    animation__click="property:position.y; from:0.55; to:0.6; startEvents:click; dur:300;"
+                    sound="src:#button_sound; on: click; poolSize: 10";
+                ></a-entity>
+
+                <!-- button stand -->
+                <a-entity 
+                    position="0 0.3 0" 
+                    geometry="primitive:box; width:0.5; depth:0.5; height:0.6;"
+                    material="color:grey;"
+                ></a-entity>
+            </a-entity>
+            <!-- END OF BUTTON FOR RESETTING ROOM -->
+
+        </a-entity>
+        <!-- END OF SCENE GEOMETRY -->
+
+        <!-- external aframe-environment-component -->
+        <a-entity id="ID_Enviroment" environment="preset:default"></a-entity>
+
+      </a-scene>
+
+    </body>
+</html>

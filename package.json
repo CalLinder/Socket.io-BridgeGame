@@ -1,0 +1,16 @@
+{
+  "name": "assignment_03",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ammo.js": "github:mozillareality/ammo.js#hubs/master",
+    "express": "^4.18.3",
+    "socket.io": "^4.7.5"
+  }
+}
